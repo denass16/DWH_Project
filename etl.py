@@ -34,15 +34,13 @@ def process_song_data(cur, conn, func):
     
     df = func(conn, table)
     no_rows = len(df)
-    no_rows = 5
+    print("inserting to song_table and artist_table...")
     for i in range(no_rows):
         song_data =  df[['song_id', 'title', 'artist_id', 'year', 'duration']].values[i].tolist()
-        print("inserting to song_table...")
         cur.execute(sql.song_table_insert, song_data)
 
         # insert artist record
         artist_data = df[['artist_id', 'artist_name', 'artist_location', 'artist_latitude', 'artist_longitude']].values[i].tolist()
-        print("inserting to artist_table...")
         cur.execute(sql.artist_table_insert, artist_data)
     conn.commit()
 
@@ -76,7 +74,7 @@ def process_log_data(cur, conn, func):
         time_df = pd.concat([time_df, pd.DataFrame(list(time_data[i]), columns=[column_labels[i]])], sort=False, axis=1)
     
     print("inserting to time_table...")
-    for i, row in time_df.head(5).iterrows():
+    for i, row in time_df.iterrows():
         cur.execute(sql.time_table_insert, list(row))
         
     # load user table
@@ -84,11 +82,11 @@ def process_log_data(cur, conn, func):
 
     # insert user records
     print("inserting to user_table...")
-    for i, row in user_df.head(5).iterrows():
+    for i, row in user_df.iterrows():
         cur.execute(sql.user_table_insert, row)
     
     # insert songplay records
-    for index, row in df.head(5).iterrows():
+    for index, row in df.iterrows():
         
         # get songid and artistid from song and artist tables
         print("querying song and artist tables...")
@@ -105,17 +103,7 @@ def process_log_data(cur, conn, func):
         songplay_data = (pd.to_datetime(row.ts, unit='ms'), row.user_id, row.level, songid, artistid, row.session_id, row.location, row.user_agent)
         cur.execute(sql.songplay_table_insert, songplay_data)
     conn.commit()
-    
-"""
-def insert_tables(cur, conn):
-    i = 1
-    for query in insert_table_queries:
-        print("inserting table {}".format(i))
-        cur.execute(query)
-        conn.commit()
-        i += 1
-    print("inserting tables complete")
-"""    
+     
 
 def main():
     config = configparser.ConfigParser()
@@ -125,8 +113,8 @@ def main():
     cur = conn.cursor()
     print("connection successful")
     
-    #load_staging_tables(cur, conn)
-    #process_song_data(cur, conn, func=get_staging_data)
+    load_staging_tables(cur, conn)
+    process_song_data(cur, conn, func=get_staging_data)
     process_log_data(cur, conn, func=get_staging_data)
     conn.close()
 
