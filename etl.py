@@ -1,12 +1,12 @@
 import configparser
 import psycopg2
 import pandas as pd
-import sql_queries
+import sql_queries as sql
 
 
 def load_staging_tables(cur, conn):
     i = 1
-    for query in copy_table_queries:
+    for query in sql.copy_table_queries:
         print("loading staging_table {}...".format(i))
         cur.execute(query)
         conn.commit()
@@ -34,15 +34,16 @@ def process_song_data(cur, conn, func):
     
     df = func(conn, table)
     no_rows = len(df)
+    no_rows = 5
     for i in range(no_rows):
         song_data =  df[['song_id', 'title', 'artist_id', 'year', 'duration']].values[i].tolist()
         print("inserting to song_table...")
-        cur.execute(song_table_insert, song_data)
+        cur.execute(sql.song_table_insert, song_data)
 
         # insert artist record
         artist_data = df[['artist_id', 'artist_name', 'artist_location', 'artist_latitude', 'artist_longitude']].values[i].tolist()
         print("inserting to artist_table...")
-        cur.execute(artist_table_insert, artist_data)
+        cur.execute(sql.artist_table_insert, artist_data)
     conn.commit()
 
     
@@ -75,23 +76,23 @@ def process_log_data(cur, conn, func):
         time_df = pd.concat([time_df, pd.DataFrame(list(time_data[i]), columns=[column_labels[i]])], sort=False, axis=1)
     
     print("inserting to time_table...")
-    for i, row in time_df.iterrows():
-        cur.execute(time_table_insert, list(row))
+    for i, row in time_df.head(5).iterrows():
+        cur.execute(sql.time_table_insert, list(row))
         
     # load user table
     user_df = df[['user_id', 'first_name', 'last_name', 'gender', 'level']]
 
     # insert user records
     print("inserting to user_table...")
-    for i, row in user_df.iterrows():
-        cur.execute(user_table_insert, row)
+    for i, row in user_df.head(5).iterrows():
+        cur.execute(sql.user_table_insert, row)
     
     # insert songplay records
-    for index, row in df.iterrows():
+    for index, row in df.head(5).iterrows():
         
         # get songid and artistid from song and artist tables
         print("querying song and artist tables...")
-        cur.execute(song_select, (row.song, row.artist, row.length))        
+        cur.execute(sql.song_select, (row.song, row.artist, row.length))        
         results = cur.fetchone()
         
         if results:
@@ -102,7 +103,7 @@ def process_log_data(cur, conn, func):
         # insert songplay record
         print("inserting to songplay_table...")
         songplay_data = (pd.to_datetime(row.ts, unit='ms'), row.user_id, row.level, songid, artistid, row.session_id, row.location, row.user_agent)
-        cur.execute(songplay_table_insert, songplay_data)
+        cur.execute(sql.songplay_table_insert, songplay_data)
     conn.commit()
     
 """
@@ -125,7 +126,7 @@ def main():
     print("connection successful")
     
     #load_staging_tables(cur, conn)
-    process_song_data(cur, conn, func=get_staging_data)
+    #process_song_data(cur, conn, func=get_staging_data)
     process_log_data(cur, conn, func=get_staging_data)
     conn.close()
 

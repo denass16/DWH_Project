@@ -123,41 +123,32 @@ staging_events_copy = ("""
 # FINAL TABLES
 
 songplay_table_insert = ("""
-        INSERT INTO songplays (start_time, user_id, level, song_id, artist_id, session_id, location, user_agent)
+        INSERT INTO songplay_table (start_time, user_id, level, song_id, artist_id, session_id, location, user_agent)
         VALUES (%s, %s, %s, %s, %s,%s, %s, %s)
 """)
 
 user_table_insert = ("""
         INSERT INTO user_table
         VALUES (%s, %s, %s, %s, %s)
-        ON CONFLICT (user_id)
-        DO UPDATE
-        SET level = excluded.level
 """)
 
 song_table_insert = ("""
         INSERT INTO song_table
         VALUES (%s, %s, %s, %s, %s)
-        ON CONFLICT (song_id)
-        DO NOTHING
 """)
 
 artist_table_insert = ("""
         INSERT INTO artist_table
         VALUES (%s, %s, %s, %s, %s)
-        ON CONFLICT (artist_id)
-        DO NOTHING
 """)
 
 time_table_insert = ("""
         INSERT INTO time_table
         VALUES (%s, %s, %s, %s, %s, %s, %s)
-        ON CONFLICT (start_time)
-        DO NOTHING
 """)
 
-song_select = ("SELECT song_id, songs.artist_id FROM (songs JOIN artists ON songs.artist_id=artists.artist_id) \
-                WHERE title=%s AND name=%s AND duration=%s;")
+song_select = ("SELECT song_id, song_table.artist_id FROM (song_table JOIN artist_table ON song_table.artist_id=artist_table.artist_id) \
+                WHERE title=%s AND artist_name=%s AND duration=%s;")
 
 # QUERY LISTS
 
